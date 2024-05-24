@@ -93,7 +93,7 @@ class ResNet(nn.Module):
         self.conv5 = self._make_layer(block, 512, num_blocks[3], stride=2)
         # self.avgpool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
         # self.fc = nn.Linear(512 * block.expansion_factor, num_classes)
-
+        self.relu = nn.ReLU()
         self._init_layer()
 
     def _make_layer(self, block, out_channels, num_blocks, stride):
@@ -120,8 +120,10 @@ class ResNet(nn.Module):
         x = self.conv5(x)
 
         # x = self.avgpool(x)
-        x = torch.flatten(x, 1)
+        # x = torch.flatten(x, 1)
         # x = self.fc(x)
+        # x = self.relu(x)
+
         return x
 
 class Model:
