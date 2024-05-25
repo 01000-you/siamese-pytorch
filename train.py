@@ -14,8 +14,9 @@ import numpy as np
 import gflags
 import sys
 from collections import deque
-import os
+from torch.utils.tensorboard import SummaryWriter
 
+writer = SummaryWriter()
 
 if __name__ == '__main__':
 
@@ -32,9 +33,13 @@ if __name__ == '__main__':
     gflags.DEFINE_integer("save_every", 100, "save model after each save_every iter.")
     gflags.DEFINE_integer("test_every", 100, "test model after each test_every iter.")
     gflags.DEFINE_integer("max_iter", 50000, "number of iterations before stopping")
+    gflags.DEFINE_string("log_path", "./tensorboard", "path to save logs")
     gflags.DEFINE_string("model_path", "models", "path to store model")
 
     Flags(sys.argv)
+
+    writer = SummaryWriter(Flags.log_path)
+
 
     data_transforms = transforms.Compose([
         transforms.RandomAffine(15),
@@ -104,6 +109,7 @@ if __name__ == '__main__':
             print('*'*70)
             queue.append(right*1.0/(right+error))
         train_loss.append(loss_val)
+        writer.add_scalar("Loss/train", loss_val / Flags.show_every, batch_id)
     #  learning_rate = learning_rate * 0.95
 
     with open('train_loss', 'wb') as f:
@@ -114,3 +120,4 @@ if __name__ == '__main__':
         acc += d
     print("#"*70)
     print("final accuracy: ", acc/20)
+    writer.close()
