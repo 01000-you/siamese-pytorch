@@ -10,8 +10,34 @@ import numpy as np
 from collections import deque
 from torch.utils.tensorboard import SummaryWriter
 import argparse
+import logging
 
 writer = SummaryWriter()
+
+# 로그 파일 경로 설정
+log_file = 'experiment.log'
+
+# 로그 포매터 설정
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# 로거 생성
+logger = logging.getLogger('experiment_logger')
+logger.setLevel(logging.DEBUG)
+
+# 파일 핸들러 생성
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# 콘솔 핸들러 생성 (터미널 출력용)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+
+# 로그 기록
+logger.info('Experiment started.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a Siamese Network')
@@ -49,7 +75,7 @@ if __name__ == '__main__':
         # get gpu ids
         gpu_count = torch.cuda.device_count()
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f'use gpu : {device}')  # todo : change logger
+    logger.info(f'use gpu : {device}')  # todo : change logger
 
     # train_dataset = dset.ImageFolder(root=args.train_path)
     # test_dataset = dset.ImageFolder(root=args.test_path)
@@ -87,7 +113,7 @@ if __name__ == '__main__':
         loss.backward()
         optimizer.step()
         if batch_id % args.show_every == 0 :
-            print('[%d]\tloss:\t%.5f\ttime lapsed:\t%.2f s'%(batch_id, loss_val/args.show_every, time.time() - time_start))
+            logger.info('[%d]\tloss:\t%.5f\ttime lapsed:\t%.2f s'%(batch_id, loss_val/args.show_every, time.time() - time_start))
             loss_val = 0
             time_start = time.time()
         if batch_id % args.save_every == 0:
@@ -102,9 +128,9 @@ if __name__ == '__main__':
                 if pred == 0:
                     right += 1
                 else: error += 1
-            print('*'*70)
-            print('[%d]\tTest set\tcorrect:\t%d\terror:\t%d\tprecision:\t%f'%(batch_id, right, error, right*1.0/(right+error)))
-            print('*'*70)
+            logger.info('*'*70)
+            logger.info('[%d]\tTest set\tcorrect:\t%d\terror:\t%d\tprecision:\t%f'%(batch_id, right, error, right*1.0/(right+error)))
+            logger.info('*'*70)
             queue.append(right*1.0/(right+error))
             net.train()
         train_loss.append(loss_val)
@@ -117,6 +143,6 @@ if __name__ == '__main__':
     acc = 0.0
     for d in queue:
         acc += d
-    print("#"*70)
-    print("final accuracy: ", acc/20)
+    logger.info("#"*70)
+    logger.info("final accuracy: ", acc/20)
     writer.close()
