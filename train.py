@@ -24,6 +24,7 @@ if __name__ == '__main__':
     parser.add_argument("--times", type=int, default=400, help="Number of samples to test accuracy")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size")
     parser.add_argument("--lr", type=float, default=0.00006, help="Learning rate")
+    parser.add_argument("--dr", type=float, default=0.2, help="dropout rate")
     parser.add_argument("--show_every", type=int, default=10, help="Show result after each show_every iter")
     parser.add_argument("--save_every", type=int, default=100, help="Save model after each save_every iter")
     parser.add_argument("--test_every", type=int, default=100, help="Test model after each test_every iter")
@@ -38,6 +39,7 @@ if __name__ == '__main__':
 
     data_transforms = transforms.Compose([
         transforms.RandomAffine(15),
+        # transforms.Resize((224, 224)),
         transforms.ToTensor()
     ])
 
@@ -62,7 +64,7 @@ if __name__ == '__main__':
 
     loss_fn = torch.nn.BCEWithLogitsLoss(size_average=True)
 
-    net = Siamese()
+    net = Siamese(dropout_rate=args.dr)
     net.to(device)
     net.train()
 
@@ -92,10 +94,11 @@ if __name__ == '__main__':
             torch.save(net.state_dict(), args.model_path + '/model-inter-' + str(batch_id+1) + ".pt")
         if batch_id % args.test_every == 0:
             right, error = 0, 0
+            net.eval()
             for _, (test1, test2) in enumerate(testLoader, 1):
                 test1, test2 = Variable(test1.to(device)), Variable(test2.to(device))
                 output = net.forward(test1, test2).data.cpu().numpy()
-                pred = np.argmax(output)
+                pred = np.argmin(output)
                 if pred == 0:
                     right += 1
                 else: error += 1
@@ -103,6 +106,7 @@ if __name__ == '__main__':
             print('[%d]\tTest set\tcorrect:\t%d\terror:\t%d\tprecision:\t%f'%(batch_id, right, error, right*1.0/(right+error)))
             print('*'*70)
             queue.append(right*1.0/(right+error))
+            net.train()
         train_loss.append(loss_val)
         writer.add_scalar("Loss/train", loss_val / args.show_every, batch_id)
     #  learning_rate = learning_rate * 0.95

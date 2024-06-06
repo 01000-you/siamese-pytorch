@@ -8,6 +8,24 @@ import random
 import torchvision.datasets as dset
 from PIL import Image
 
+def loadPath(dataPath):
+    print("begin loading training data")
+    datas = {}
+    # agrees = [0, 90, 180, 270]
+    agrees = [0]
+    idx = 0
+
+    # for agree in agrees:
+    for alphaPath in os.listdir(dataPath):
+        for charPath in os.listdir(os.path.join(dataPath, alphaPath)):
+            datas[idx] = []
+            for samplePath in os.listdir(os.path.join(dataPath, alphaPath, charPath)):
+                file_path = os.path.join(dataPath, alphaPath, charPath, samplePath)
+                datas[idx].append(file_path)
+
+            idx += 1
+    print("finish loading training dataset to memory")
+    return datas, idx
 
 class OmniglotTrain(Dataset):
 
@@ -21,23 +39,26 @@ class OmniglotTrain(Dataset):
     def loadToMem(self, dataPath):
         print("begin loading training dataset to memory")
         datas = {}
-        agrees = [0, 90, 180, 270]
+        # agrees = [0, 90, 180, 270]
+        agrees = [0]
         idx = 0
-        for agree in agrees:
-            for alphaPath in os.listdir(dataPath):
-                for charPath in os.listdir(os.path.join(dataPath, alphaPath)):
-                    datas[idx] = []
-                    for samplePath in os.listdir(os.path.join(dataPath, alphaPath, charPath)):
-                        filePath = os.path.join(dataPath, alphaPath, charPath, samplePath)
-                        datas[idx].append(Image.open(filePath).rotate(agree).convert('L'))
-                    idx += 1
+
+        # for agree in agrees:
+        for alphaPath in os.listdir(dataPath):
+            for charPath in os.listdir(os.path.join(dataPath, alphaPath)):
+                datas[idx] = []
+                for samplePath in os.listdir(os.path.join(dataPath, alphaPath, charPath)):
+                    filePath = os.path.join(dataPath, alphaPath, charPath, samplePath)
+                    datas[idx].append(Image.open(filePath).resize((224, 224)))  # .rotate(agree).convert('L'))
+
+                idx += 1
         print("finish loading training dataset to memory")
         return datas, idx
 
     def __len__(self):
         return  21000000
 
-    def __getitem__(self, index):
+    def __getitem__v2(self, index):
         # image1 = random.choice(self.dataset.imgs)
         label = None
         img1 = None
@@ -46,11 +67,37 @@ class OmniglotTrain(Dataset):
         if index % 2 == 1:
             label = 1.0
             idx1 = random.randint(0, self.num_classes - 1)
+            path_image1 = random.choice(self.datas[idx1])
+            path_image2 = random.choice(self.datas[idx1])
+        # get image from different class
+        else:
+            label = 0.0
+            idx1 = random.randint(0, self.num_classes - 1)
+            idx2 = random.randint(0, self.num_classes - 1)
+            while idx1 == idx2:
+                idx2 = random.randint(0, self.num_classes - 1)
+            path_image1 = random.choice(self.datas[idx1])
+            path_image2 = random.choice(self.datas[idx2])
+
+        if self.transform:
+            image1 = self.transform(Image.open(path_image1).resize((224, 224)))
+            image2 = self.transform(Image.open(path_image2).resize((224, 224)))
+        return image1, image2, torch.from_numpy(np.array([label], dtype=np.float32))
+
+    def __getitem__(self, index):
+        # image1 = random.choice(self.dataset.imgs)
+        label = None
+        img1 = None
+        img2 = None
+        # get image from same class
+        if index % 2 == 1:
+            label = 0.0
+            idx1 = random.randint(0, self.num_classes - 1)
             image1 = random.choice(self.datas[idx1])
             image2 = random.choice(self.datas[idx1])
         # get image from different class
         else:
-            label = 0.0
+            label = 1.0
             idx1 = random.randint(0, self.num_classes - 1)
             idx2 = random.randint(0, self.num_classes - 1)
             while idx1 == idx2:
@@ -62,6 +109,7 @@ class OmniglotTrain(Dataset):
             image1 = self.transform(image1)
             image2 = self.transform(image2)
         return image1, image2, torch.from_numpy(np.array([label], dtype=np.float32))
+
 
 
 class OmniglotTest(Dataset):
@@ -85,7 +133,7 @@ class OmniglotTest(Dataset):
                 datas[idx] = []
                 for samplePath in os.listdir(os.path.join(dataPath, alphaPath, charPath)):
                     filePath = os.path.join(dataPath, alphaPath, charPath, samplePath)
-                    datas[idx].append(Image.open(filePath).convert('L'))
+                    datas[idx].append(Image.open(filePath).resize((224, 224)))
                 idx += 1
         print("finish loading test dataset to memory")
         return datas, idx
