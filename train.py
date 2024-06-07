@@ -103,7 +103,7 @@ if __name__ == '__main__':
     queue = deque(maxlen=20)
 
     for batch_id, (img1, img2, label) in enumerate(trainLoader, 1):
-        if batch_id > args.max_iter:
+        if batch_id > args.max_iter * args.batch_size / 128:
             break
         img1, img2, label = Variable(img1.to(device)), Variable(img2.to(device)), Variable(label.to(device))
         optimizer.zero_grad()
