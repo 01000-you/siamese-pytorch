@@ -54,7 +54,7 @@ if __name__ == '__main__':
     parser.add_argument("--show_every", type=int, default=10, help="Show result after each show_every iter")
     parser.add_argument("--save_every", type=int, default=100, help="Save model after each save_every iter")
     parser.add_argument("--test_every", type=int, default=100, help="Test model after each test_every iter")
-    parser.add_argument("--max_iter", type=int, default=50000, help="Number of iterations before stopping")
+    parser.add_argument("--max_iter", type=int, default=10000, help="Number of iterations before stopping")
     parser.add_argument("--log_path", type=str, default="./tensorboard", help="Path to save logs")
     parser.add_argument("--model_path", type=str, default="models", help="Path to store model")
     parser.add_argument("--device", type=str, default="cuda", help="Device for computation (cuda, cpu, mps)")
