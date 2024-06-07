@@ -120,16 +120,44 @@ if __name__ == '__main__':
             torch.save(net.state_dict(), args.model_path + '/model-inter-' + str(batch_id+1) + ".pt")
         if batch_id % args.test_every == 0:
             right, error = 0, 0
+            right_top3, error_top3 = 0, 0
+            right_top5, error_top5 = 0, 0
             net.eval()
             for _, (test1, test2) in enumerate(testLoader, 1):
                 test1, test2 = Variable(test1.to(device)), Variable(test2.to(device))
-                output = net.forward(test1, test2).data.cpu().numpy()
-                pred = np.argmin(output)
-                if pred == 0:
-                    right += 1
-                else: error += 1
+                # output = net.forward(test1, test2).data.cpu().numpy()
+                # pred = np.argmin(output)
+                output = net.forward(test1, test2).data
+                pred = torch.topk(output[:, 0], 1, largest=False).indices
+                pred_top3 = torch.topk(output[:, 0], 3, largest=False).indices
+                pred_top5 = torch.topk(output[:, 0], 5, largest=False).indices
+
+                right, error = (right + 1, error) if 0 in pred else (right, error + 1)
+                right_top3, error_top3 = (right_top3 + 1, error_top3) if 0 in pred_top3 else \
+                    (right_top3, error_top3 + 1)
+                right_top5, error_top5 = (right_top5 + 1, error_top5) if 0 in pred_top5 else \
+                    (right_top5, error_top5 + 1)
+                #
+                # if 0 in pred:
+                #     right += 1
+                # else: error += 1
+                #
+                # if 0 in pred_top3:
+                #     right_top3 += 1
+                # else: error_top3 += 1
+                #
+                # if 0 in pred_top5:
+                #     right_top5 += 1
+                # else: error_top5 += 1
+
             logger.info('*'*70)
-            logger.info('[%d]\tTest set\tcorrect:\t%d\terror:\t%d\tprecision:\t%f'%(batch_id, right, error, right*1.0/(right+error)))
+            logger.info('[%d]\tTest set Top1\tcorrect:\t%d\terror:\t%d\tprecision:\t%f'
+                        %(batch_id, right, error, right*1.0/(right+error)))
+            logger.info('[%d]\tTest set Top3\tcorrect:\t%d\terror:\t%d\tprecision:\t%f'
+                        %(batch_id, right_top3, error_top3, right_top3*1.0/(right_top3+error_top3)))
+            logger.info('[%d]\tTest set Top5\tcorrect:\t%d\terror:\t%d\tprecision:\t%f'
+                        %(batch_id, right_top5, error_top5, right_top5*1.0/(right_top5+error_top5)))
+
             logger.info('*'*70)
             queue.append(right*1.0/(right+error))
             net.train()
