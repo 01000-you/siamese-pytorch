@@ -8,7 +8,7 @@ from distutils.dir_util import copy_tree
 # 실험 실행을 위한 인자 파서 설정
 parser = argparse.ArgumentParser(description="Run multiple experiments")
 parser.add_argument('--lrs', nargs='+', type=float, required=True, help='List of learning rates for the experiments')
-parser.add_argument('--dr', nargs='+', type=float, required=True, help='List of dropout rates for the experiments')
+parser.add_argument('--drs', nargs='+', type=float, required=True, help='List of dropout rates for the experiments')
 parser.add_argument('--batch_sizes', nargs='+', type=int, required=True, help='List of batch sizes for the experiments')
 args = parser.parse_args()
 
